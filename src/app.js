@@ -2,48 +2,76 @@
 
 }
 
-function SnakeScene(context) {
+function SnakeScene(options) {
 
     // constants
     var GAME_STATE_NORMAL = 0x0000;
     var GAME_STATE_DEATH = 0x0001;
 
-    var m_canvas = context.canvas;
-    var m_dots = { w: 54, h: 36 };
+    var m_canvas = options.canvas;
+    var m_context = options.canvas.getContext("2d");
+    var m_dots = options.size;
     var m_pixelsPerDot = { w: m_canvas.width / m_dots.w, h: m_canvas.height / m_dots.h };
-    var m_currentDirection = [1, 0];
-    var m_lastTicksUpdated = 0;
-    var m_currentSnake = [
-        { x: -1 + m_dots.w / 2, y: -2 + m_dots.h / 2 },
-        { x: -1 + m_dots.w / 2, y: -1 + m_dots.h / 2 },
-        { x: -1 + m_dots.w / 2, y: 0 + m_dots.h / 2 },
-        { x: -1 + m_dots.w / 2, y: 1 + m_dots.h / 2 },
-        { x: -1 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
-        { x: 0 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
-        { x: 1 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
-    ];
-    var m_gameState = GAME_STATE_NORMAL;
-    var m_waitForNextUpdate = false;
-    var m_snakeIncreaseSize = false;
-    var m_currentFood = { x: 3 + m_dots.w / 2, y: 2 + m_dots.h / 2 };
-    var m_currentFrameUpdate = 150;
-    var m_maximumUpdateRate = 5;
-    var m_snakeColorTable = [ "#fff", "#aaa" ];
-    var m_snakeColorIndex = 0;
+
+    // snake scene state
+    var m_currentDirection;
+    var m_lastTicksUpdated;
+    var m_lastTicksPass = null;
+    var m_currentSnake;
+    var m_gameState;
+    var m_waitForNextUpdate;
+    var m_snakeIncreaseSize;
+    var m_currentFood;
+    var m_currentFrameUpdate;
+    var m_maximumUpdateRate;
+    var m_snakeColorTable;
+    var m_snakeColorIndex;
     var m_nextDirectionUpdate = m_currentDirection;
-    var m_score = 0;
+    var m_score;
+    var m_waitAfterReset;
 
     var drawQuadAt = function (x, y) {
         // draw quad at coords
-        context.fillRect(
+        m_context.fillRect(
             m_pixelsPerDot.w * x,
             m_pixelsPerDot.h * y,
             m_pixelsPerDot.w,
             m_pixelsPerDot.h);
     };
 
-    this.updateFoodPosition = function () {
+    var updateFoodPosition = function () {
         m_currentFood = { x: Math.floor(Math.random() * m_dots.w), y: Math.floor(Math.random() * m_dots.h) };
+    };
+
+// public:
+
+    this.onScoreUpdate = null;
+    this.onDeath = null;
+    this.onEatFood = null;
+
+    this.reset = function () {
+        m_currentDirection = [1, 0];
+        m_lastTicksUpdated = 0;
+        m_currentSnake = [
+            { x: -1 + m_dots.w / 2, y: -2 + m_dots.h / 2 },
+            { x: -1 + m_dots.w / 2, y: -1 + m_dots.h / 2 },
+            { x: -1 + m_dots.w / 2, y: 0 + m_dots.h / 2 },
+            { x: -1 + m_dots.w / 2, y: 1 + m_dots.h / 2 },
+            { x: -1 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
+            { x: 0 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
+            { x: 1 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
+        ];
+        m_gameState = GAME_STATE_NORMAL;
+        m_waitForNextUpdate = false;
+        m_snakeIncreaseSize = false;
+        m_currentFood = { x: 3 + m_dots.w / 2, y: 2 + m_dots.h / 2 };
+        m_currentFrameUpdate = 150;
+        m_maximumUpdateRate = 5;
+        m_snakeColorTable = ["#fff", "#aaa"];
+        m_snakeColorIndex = 0;
+        m_nextDirectionUpdate = m_currentDirection;
+        m_score = 0;
+        m_waitAfterReset = 1000;
     };
 
     this.onKeyPress = function (ev) {
@@ -67,113 +95,135 @@ function SnakeScene(context) {
         }
     };
 
-    this.update = function (ticks) {
-        if (ticks - m_lastTicksUpdated >= m_currentFrameUpdate) {
-            // update direction based on last keypress
-            m_currentDirection = m_nextDirectionUpdate;
-
-            // cycle into 0-1-0-1
-            m_snakeColorIndex = 1 - m_snakeColorIndex;
-
-            // update position based on direction
-            {
-                if (!m_snakeIncreaseSize)
-                    m_currentSnake = m_currentSnake.slice(1);
-                m_snakeIncreaseSize = false;
-                var last = m_currentSnake[m_currentSnake.length - 1];
-
-                var toPush = {
-                    x: (last.x + m_currentDirection[0]) % m_dots.w,
-                    y: (last.y + m_currentDirection[1]) % m_dots.h
-                }
-                if (toPush.x < 0) toPush.x = m_dots.w - 1;
-                if (toPush.y < 0) toPush.y = m_dots.h - 1;
-                m_currentSnake.push(toPush);
-            }
-
-            // check self colision
-            {
-                var last = m_currentSnake[m_currentSnake.length - 1];
-                for (var x = 0; x < m_currentSnake.length - 1; x++) {
-                    var item = m_currentSnake[x];
-                    if (item.x == last.x && item.y == last.y) {
-                        m_gameState = GAME_STATE_DEATH;
-                    }
-                }
-            }
-
-            // check for get food
-            {
-                var last = m_currentSnake[m_currentSnake.length - 1];
-                if(last.x == m_currentFood.x && last.y == m_currentFood.y)
-                {
-                    // found
-                    // push new food
-                    this.updateFoodPosition();
-
-                    // increase snake size by one
-                    m_snakeIncreaseSize = true;
-
-                    // update "update rate"
-                    // get 10% more closer to maximum update rate
-                    m_currentFrameUpdate -= (m_currentFrameUpdate - m_maximumUpdateRate) * 0.1;
-
-                    // add a score
-                    m_score += 100;
-                }
-            }
-
-            // update score
-            {
-                m_score += 1;
-            }
-
-            if (this.onScoreUpdate != null)
-                this.onScoreUpdate(m_score);
-
-            m_lastTicksUpdated = ticks;
-            m_waitForNextUpdate = false;
-        }
+    this.getScore = function () {
+        return m_score;
     };
 
-    this.onScoreUpdate = null;
+    this.update = function (ticks) {
+        switch (m_gameState) {
+            case GAME_STATE_DEATH:
+                break;
+            case GAME_STATE_NORMAL:
+                if (m_lastTicksPass == null)
+                    m_lastTicksPass = ticks;
+
+                if (m_waitAfterReset > 0) {
+                    m_waitAfterReset -= (ticks - m_lastTicksPass);
+                }
+                else if (ticks - m_lastTicksUpdated >= m_currentFrameUpdate) {
+                    // update direction based on last keypress
+                    m_currentDirection = m_nextDirectionUpdate;
+
+                    // cycle into 0-1-0-1
+                    m_snakeColorIndex = 1 - m_snakeColorIndex;
+
+                    // update position based on direction
+                    {
+                        if (!m_snakeIncreaseSize)
+                            m_currentSnake = m_currentSnake.slice(1);
+                        m_snakeIncreaseSize = false;
+                        var last = m_currentSnake[m_currentSnake.length - 1];
+
+                        var toPush = {
+                            x: (last.x + m_currentDirection[0]) % m_dots.w,
+                            y: (last.y + m_currentDirection[1]) % m_dots.h
+                        }
+                        if (toPush.x < 0) toPush.x = m_dots.w - 1;
+                        if (toPush.y < 0) toPush.y = m_dots.h - 1;
+                        m_currentSnake.push(toPush);
+                    }
+
+                    // check self colision
+                    {
+                        var last = m_currentSnake[m_currentSnake.length - 1];
+                        for (var x = 0; x < m_currentSnake.length - 1; x++) {
+                            var item = m_currentSnake[x];
+                            if (item.x == last.x && item.y == last.y) {
+                                m_gameState = GAME_STATE_DEATH;
+
+                                if(this.onDeath != null)
+                                    this.onDeath(this);
+                            }
+                        }
+                    }
+
+                    // check for get food
+                    {
+                        var last = m_currentSnake[m_currentSnake.length - 1];
+                        if (last.x == m_currentFood.x && last.y == m_currentFood.y) {
+                            // found
+                            // push new food
+                            updateFoodPosition();
+
+                            // increase snake size by one
+                            m_snakeIncreaseSize = true;
+
+                            // update "update rate"
+                            // get 10% more closer to maximum update rate
+                            m_currentFrameUpdate -= (m_currentFrameUpdate - m_maximumUpdateRate) * 0.1;
+
+                            // add a score
+                            m_score += 100;
+
+                            if (this.onEatFood != null)
+                                this.onEatFood(this);
+                        }
+                    }
+
+                    // update score
+                    {
+                        m_score += 1;
+                    }
+
+                    if (this.onScoreUpdate != null)
+                        this.onScoreUpdate(this);
+
+                    m_lastTicksUpdated = ticks;
+                    m_waitForNextUpdate = false;
+                }
+                break;
+        }
+
+        m_lastTicksPass = ticks;
+    };
 
     this.draw = function () {
 
         switch (m_gameState) {
             case GAME_STATE_NORMAL:
-                context.clearRect(0, 0, m_canvas.width, m_canvas.height);
-                context.fillStyle = m_snakeColorTable[m_snakeColorIndex];
+                m_context.clearRect(0, 0, m_canvas.width, m_canvas.height);
+                m_context.fillStyle = m_snakeColorTable[m_snakeColorIndex];
                 for (var i = 0; i < m_currentSnake.length; i++) {
                     var item = m_currentSnake[i];
                     drawQuadAt(item.x, item.y);
                 }
 
                 // draw food
-                context.fillStyle = "#0ae";
+                m_context.fillStyle = "#0ae";
                 drawQuadAt(m_currentFood.x, m_currentFood.y);
                 break;
             case GAME_STATE_DEATH:
-                context.fillStyle = "#fff";
-                context.clearRect(0, 0, m_canvas.width, m_canvas.height);
-                context.font = "40px Arial";
+                m_context.fillStyle = "#fff";
+                m_context.clearRect(0, 0, m_canvas.width, m_canvas.height);
+                m_context.font = "40px Arial";
                 var gameOverText = "GAME OVER";
-                context.fillText(gameOverText,
-                    m_canvas.width / 2 - (context.measureText(gameOverText).width / 2),
+                m_context.fillText(gameOverText,
+                    m_canvas.width / 2 - (m_context.measureText(gameOverText).width / 2),
                     m_canvas.height / 2);
-                context.strokeStyle = "#f00";
-                context.strokeText(gameOverText,
-                    m_canvas.width / 2 - (context.measureText(gameOverText).width / 2),
+                m_context.strokeStyle = "#f00";
+                m_context.strokeText(gameOverText,
+                    m_canvas.width / 2 - (m_context.measureText(gameOverText).width / 2),
                     m_canvas.height / 2);
                 break;
             default:
                 break;
         }
     };
+
+// init:
+    this.reset();
 }
 
 /*
-    TODO: score
-    TODO: reset (metodo que eu chamo e o jogo reinicia)
     TODO: callbacks de iniciou, morreu, comeu..
 */

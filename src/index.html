@@ -1,50 +1,77 @@
-﻿<h1>Home</h1>
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>SimpleSnakeSample</title>
+</head>
+<body>
+    <h1>Home</h1>
+    <div>
+        <strong>Score: </strong>
+        <span id="score"></span>
+        <button type="button" id="reset">Reset Score</button>
+    </div>
 
-<strong>Score: </strong>
-<span id="score"></span>
-
-@section scripts {
-    <script src="~/Scripts/app.js"></script>
+    <script src="app.js"></script>
     <script>
         var spanScore = document.querySelector("#score");
 
         (function () {
-            // create a canvas
-            var canvas = document.createElement("canvas");
-            canvas.style.backgroundColor = "#000";
-            canvas.width = 1080;
-            canvas.height = 720;
-            document.body.appendChild(canvas);
-            var context = canvas.getContext("2d");
+            // initialize canvas, context and scene
+            var canvas = null;
+            var context = null;
+            var snakeScene = null;
+            {
+                canvas = document.createElement("canvas");
+                canvas.style.backgroundColor = "#024";
+                canvas.width = 1080;
+                canvas.height = 720;
+                document.body.appendChild(canvas);
+                snakeScene = new SnakeScene({
+                    canvas: canvas,
+                    size: { w: 54, h: 36 }
+                });
+            }
 
-            var snakeScene = new SnakeScene(context);
-
-            snakeScene.onScoreUpdate = function (score) {
-                spanScore.textContent = score.toString();
-            };
-
-            document.body.addEventListener("keydown", function (ev) {
-                snakeScene.onKeyPress(ev);
-            });
+            // events
+            {
+                snakeScene.onScoreUpdate = function (snake) {
+                    spanScore.textContent = snake.getScore().toString();
+                };
+                document.body.addEventListener("keydown", function (ev) {
+                    snakeScene.onKeyPress(ev);
+                });
+                snakeScene.onDeath = function (snake) {
+                    console.log("snake has died");
+                };
+                snakeScene.onEatFood = function (snake) {
+                    console.log("snake eat a food");
+                };
+                document.querySelector("#reset").addEventListener("click", function (ev) {
+                    snakeScene.reset();
+                }, true);
+            }
 
             // set up draw loop
-            var i = 0;
-            var lastDrawTick = 0;
-            var showFPS = false;
-            var drawLoop = function (ticks) {
+            {
+                var i = 0;
+                var lastDrawTick = 0;
+                var showFPS = false;
+                var drawLoop = function (ticks) {
 
-                snakeScene.update(ticks);
-                snakeScene.draw();
+                    snakeScene.update(ticks);
+                    snakeScene.draw();
 
-                i++;
-                if (showFPS && i % 60 == 0) {
-                    console.info("fps: " + (60000 / (ticks - lastDrawTick)).toString());
-                    lastDrawTick = ticks;
-                }
+                    i++;
+                    if (showFPS && i % 60 == 0) {
+                        console.info("fps: " + (60000 / (ticks - lastDrawTick)).toString());
+                        lastDrawTick = ticks;
+                    }
+                    window.requestAnimationFrame(drawLoop);
+                };
                 window.requestAnimationFrame(drawLoop);
-            };
-
-            window.requestAnimationFrame(drawLoop);
+            }
         })();
     </script>
-}
+
+</body>
+</html>
