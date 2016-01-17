@@ -1,0 +1,50 @@
+﻿<h1>Home</h1>
+
+<strong>Score: </strong>
+<span id="score"></span>
+
+@section scripts {
+    <script src="~/Scripts/app.js"></script>
+    <script>
+        var spanScore = document.querySelector("#score");
+
+        (function () {
+            // create a canvas
+            var canvas = document.createElement("canvas");
+            canvas.style.backgroundColor = "#000";
+            canvas.width = 1080;
+            canvas.height = 720;
+            document.body.appendChild(canvas);
+            var context = canvas.getContext("2d");
+
+            var snakeScene = new SnakeScene(context);
+
+            snakeScene.onScoreUpdate = function (score) {
+                spanScore.textContent = score.toString();
+            };
+
+            document.body.addEventListener("keydown", function (ev) {
+                snakeScene.onKeyPress(ev);
+            });
+
+            // set up draw loop
+            var i = 0;
+            var lastDrawTick = 0;
+            var showFPS = false;
+            var drawLoop = function (ticks) {
+
+                snakeScene.update(ticks);
+                snakeScene.draw();
+
+                i++;
+                if (showFPS && i % 60 == 0) {
+                    console.info("fps: " + (60000 / (ticks - lastDrawTick)).toString());
+                    lastDrawTick = ticks;
+                }
+                window.requestAnimationFrame(drawLoop);
+            };
+
+            window.requestAnimationFrame(drawLoop);
+        })();
+    </script>
+}
