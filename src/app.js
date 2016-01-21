@@ -26,6 +26,7 @@ function SnakeScene(options) {
     var m_maximumUpdateRate;
     var m_snakeColorTable;
     var m_snakeColorIndex;
+    var m_snakeLastUpdatedColorTicks;
     var m_nextDirectionUpdate = m_currentDirection;
     var m_score;
     var m_waitAfterReset;
@@ -50,25 +51,27 @@ function SnakeScene(options) {
     this.onEatFood = null;
 
     this.reset = function () {
-        m_currentDirection = [1, 0];
+        m_currentDirection = [-1, 0];
         m_lastTicksUpdated = 0;
         m_currentSnake = [
-            { x: -1 + m_dots.w / 2, y: -2 + m_dots.h / 2 },
-            { x: -1 + m_dots.w / 2, y: -1 + m_dots.h / 2 },
-            { x: -1 + m_dots.w / 2, y: 0 + m_dots.h / 2 },
-            { x: -1 + m_dots.w / 2, y: 1 + m_dots.h / 2 },
-            { x: -1 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
             { x: 0 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
-            { x: 1 + m_dots.w / 2, y: 2 + m_dots.h / 2 },
+            { x: 0 + m_dots.w / 2, y: 1 + m_dots.h / 2 },
+            { x: 0 + m_dots.w / 2, y: 0 + m_dots.h / 2 },
+            { x: 0 + m_dots.w / 2, y: -1 + m_dots.h / 2 },
+            { x: 0 + m_dots.w / 2, y: -2 + m_dots.h / 2 },
+            { x: -1 + m_dots.w / 2, y: -2 + m_dots.h / 2 },
+            { x: -2 + m_dots.w / 2, y: -2 + m_dots.h / 2 },
         ];
         m_gameState = GAME_STATE_NORMAL;
         m_waitForNextUpdate = false;
         m_snakeIncreaseSize = false;
-        m_currentFood = { x: 3 + m_dots.w / 2, y: 2 + m_dots.h / 2 };
+        m_currentFood = { x: 2 + m_dots.w / 2, y: -2 + m_dots.h / 2 };
         m_currentFrameUpdate = 150;
         m_maximumUpdateRate = 5;
-        m_snakeColorTable = ["#fff", "#aaa"];
+        m_snakeColorTable = ["#fff", "#4af"];
         m_snakeColorIndex = 0;
+        m_snakeLastUpdatedColorTicks = null;
+        m_snakeWaitForChangeColorFrames = 0;
         m_nextDirectionUpdate = m_currentDirection;
         m_score = 0;
         m_waitAfterReset = 1000;
@@ -107,15 +110,25 @@ function SnakeScene(options) {
                 if (m_lastTicksPass == null)
                     m_lastTicksPass = ticks;
 
+                // update color index for default
+                if (m_snakeLastUpdatedColorTicks == null || ticks - m_snakeLastUpdatedColorTicks >= 500) {
+                    m_snakeColorIndex = 0;
+                    m_snakeLastUpdatedColorTicks = ticks;
+                }
+
                 if (m_waitAfterReset > 0) {
                     m_waitAfterReset -= (ticks - m_lastTicksPass);
                 }
                 else if (ticks - m_lastTicksUpdated >= m_currentFrameUpdate) {
+                    // score for turning
+                    if(m_currentDirection[0] != m_nextDirectionUpdate[0] ||
+                        m_currentDirection[1] != m_nextDirectionUpdate[1]) {
+                        m_score -= 3;
+                    }
+
                     // update direction based on last keypress
                     m_currentDirection = m_nextDirectionUpdate;
 
-                    // cycle into 0-1-0-1
-                    m_snakeColorIndex = 1 - m_snakeColorIndex;
 
                     // update position based on direction
                     {
@@ -167,13 +180,18 @@ function SnakeScene(options) {
 
                             if (this.onEatFood != null)
                                 this.onEatFood(this);
+
+                            m_snakeColorIndex = 1;
+                            m_snakeLastUpdatedColorTicks = ticks;
                         }
                     }
 
                     // update score
                     {
-                        m_score += 1;
+                        m_score = Math.max(0, m_score - 1);
                     }
+
+                    // limit bottom score
 
                     if (this.onScoreUpdate != null)
                         this.onScoreUpdate(this);
