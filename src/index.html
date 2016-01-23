@@ -40,6 +40,7 @@
                     var y = ev.offsetY - (snakePosition.y);
                     var abs_x = Math.abs(x);
                     var abs_y = Math.abs(y);
+                    if (abs_x == 0 && abs_x == abs_y) return;
                     if (abs_x > abs_y) {
                         snakeScene.moveSnakeDirection(x / Math.min(abs_x, 1), 0);
                     }
