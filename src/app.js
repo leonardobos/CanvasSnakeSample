@@ -77,25 +77,18 @@ function SnakeScene(options) {
         m_waitAfterReset = 1000;
     };
 
-    this.onKeyPress = function (ev) {
-        switch (ev.keyCode) {
-            case 37: // left
-                if (m_currentDirection[0] == 1) break;
-                m_nextDirectionUpdate = [-1, 0];
-                break;
-            case 38: // up
-                if (m_currentDirection[1] == 1) break;
-                m_nextDirectionUpdate = [0, -1];
-                break;
-            case 39: // right
-                if (m_currentDirection[0] == -1) break;
-                m_nextDirectionUpdate = [1, 0];
-                break;
-            case 40: // down
-                if (m_currentDirection[1] == -1) break;
-                m_nextDirectionUpdate = [0, 1];
-                break;
-        }
+    this.getHeadPositionInPixels = function() {
+        var l = m_currentSnake.length - 1;
+        return { 
+            x: m_currentSnake[l].x * m_pixelsPerDot.w, 
+            y: m_currentSnake[l].y * m_pixelsPerDot.h
+        };
+    };
+
+    this.moveSnakeDirection = function (x, y) {
+        if (x * -1 == m_currentDirection[0] ||
+            y * -1 == m_currentDirection[1]) return;
+        m_nextDirectionUpdate = [x, y];
     };
 
     this.getScore = function () {

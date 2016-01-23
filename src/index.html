@@ -34,11 +34,37 @@
 
             // events
             {
+                canvas.addEventListener("click", function (ev) {
+                    var snakePosition = snakeScene.getHeadPositionInPixels();
+                    var x = ev.offsetX - (snakePosition.x);
+                    var y = ev.offsetY - (snakePosition.y);
+                    var abs_x = Math.abs(x);
+                    var abs_y = Math.abs(y);
+                    if (abs_x > abs_y) {
+                        snakeScene.moveSnakeDirection(x / abs_x, 0);
+                    }
+                    else {
+                        snakeScene.moveSnakeDirection(0, y / abs_y);
+                    }
+                }, true);
                 snakeScene.onScoreUpdate = function (snake) {
                     spanScore.textContent = snake.getScore().toString();
                 };
                 document.body.addEventListener("keydown", function (ev) {
-                    snakeScene.onKeyPress(ev);
+                    switch (ev.keyCode) {
+                        case 37: // left
+                            snakeScene.moveSnakeDirection(-1, 0);
+                            break;
+                        case 38: // up
+                            snakeScene.moveSnakeDirection(0, -1);
+                            break;
+                        case 39: // right
+                            snakeScene.moveSnakeDirection(1, 0);
+                            break;
+                        case 40: // down
+                            snakeScene.moveSnakeDirection(0, 1);
+                            break;
+                    }
                 });
                 snakeScene.onDeath = function (snake) {
                     console.log("snake has died");
