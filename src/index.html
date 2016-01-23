@@ -41,10 +41,10 @@
                     var abs_x = Math.abs(x);
                     var abs_y = Math.abs(y);
                     if (abs_x > abs_y) {
-                        snakeScene.moveSnakeDirection(x / abs_x, 0);
+                        snakeScene.moveSnakeDirection(x / Math.min(abs_x, 1), 0);
                     }
                     else {
-                        snakeScene.moveSnakeDirection(0, y / abs_y);
+                        snakeScene.moveSnakeDirection(0, y / Math.min(abs_y, 1));
                     }
                 }, true);
                 snakeScene.onScoreUpdate = function (snake) {
