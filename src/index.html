@@ -2,102 +2,106 @@
 <html>
 <head>
     <title>SimpleSnakeSample</title>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 </head>
-<body>
-    <h1>Home</h1>
-    <div>
-        <strong>Score: </strong>
-        <span id="score"></span>
+<body style="padding: 0; margin: 0; position: fixed; top: 0; left: 0">
+    <div style="position: fixed; top: 10px; left: 10px;padding: 0; margin: 0;">
+        <strong style="color: white; font-weight: 500; font-family: 'Helvetica'; font-size: 16px">Score: </strong>
+        <span style="color: rosybrown; font-weight: 500; font-family: 'Helvetica'; font-size: 20px" id="score"></span>
         <button type="button" id="reset">Reset Score</button>
     </div>
 
     <script src="app.js"></script>
     <script>
-        var spanScore = document.querySelector("#score");
 
-        (function () {
-            // initialize canvas, context and scene
-            var canvas = null;
-            var context = null;
-            var snakeScene = null;
-            {
-                canvas = document.createElement("canvas");
-                canvas.style.backgroundColor = "#024";
-                canvas.width = 1080;
-                canvas.height = 720;
-                document.body.appendChild(canvas);
-                snakeScene = new SnakeScene({
-                    canvas: canvas,
-                    size: { w: 54, h: 36 }
-                });
-            }
+            var spanScore = document.querySelector("#score");
 
-            // events
-            {
-                canvas.addEventListener("click", function (ev) {
-                    var snakePosition = snakeScene.getHeadPositionInPixels();
-                    var x = ev.offsetX - (snakePosition.x);
-                    var y = ev.offsetY - (snakePosition.y);
-                    var abs_x = Math.abs(x);
-                    var abs_y = Math.abs(y);
-                    if (abs_x == 0 && abs_x == abs_y) return;
-                    if (abs_x > abs_y) {
-                        snakeScene.moveSnakeDirection(x / Math.min(abs_x, 1), 0);
-                    }
-                    else {
-                        snakeScene.moveSnakeDirection(0, y / Math.min(abs_y, 1));
-                    }
-                }, true);
-                snakeScene.onScoreUpdate = function (snake) {
-                    spanScore.textContent = snake.getScore().toString();
-                };
-                document.body.addEventListener("keydown", function (ev) {
-                    switch (ev.keyCode) {
-                        case 37: // left
-                            snakeScene.moveSnakeDirection(-1, 0);
-                            break;
-                        case 38: // up
-                            snakeScene.moveSnakeDirection(0, -1);
-                            break;
-                        case 39: // right
-                            snakeScene.moveSnakeDirection(1, 0);
-                            break;
-                        case 40: // down
-                            snakeScene.moveSnakeDirection(0, 1);
-                            break;
-                    }
-                });
-                snakeScene.onDeath = function (snake) {
-                    console.log("snake has died");
-                };
-                snakeScene.onEatFood = function (snake) {
-                    console.log("snake eat a food");
-                };
-                document.querySelector("#reset").addEventListener("click", function (ev) {
-                    snakeScene.reset();
-                }, true);
-            }
+            (function () {
+                // initialize canvas, context and scene
+                var canvas = null;
+                var context = null;
+                var snakeScene = null;
+                var wf = $(window);
+                {
+                    canvas = document.createElement("canvas");
+                    canvas.style.backgroundColor = "#024";
+                    canvas.width = wf.width();
+                    canvas.height = wf.height();
+                    document.body.appendChild(canvas);
+                    snakeScene = new SnakeScene({
+                        canvas: canvas,
+                        size: { w: 54, h: 36 }
+                    });
+                }
 
-            // set up draw loop
-            {
-                var i = 0;
-                var lastDrawTick = 0;
-                var showFPS = false;
-                var drawLoop = function (ticks) {
+                // events
+                {
+                    canvas.addEventListener("click", function (ev) {
+                        var snakePosition = snakeScene.getHeadPositionInPixels();
+                        var x = ev.offsetX - (snakePosition.x);
+                        var y = ev.offsetY - (snakePosition.y);
+                        var abs_x = Math.abs(x);
+                        var abs_y = Math.abs(y);
+                        if (abs_x == 0 && abs_x == abs_y) return;
+                        if (abs_x > abs_y) {
+                            snakeScene.moveSnakeDirection(x / Math.min(abs_x, 1), 0);
+                        }
+                        else {
+                            snakeScene.moveSnakeDirection(0, y / Math.min(abs_y, 1));
+                        }
+                    }, true);
+                    snakeScene.onScoreUpdate = function (snake) {
+                        spanScore.textContent = snake.getScore().toString();
+                    };
+                    document.body.addEventListener("keydown", function (ev) {
+                        switch (ev.keyCode) {
+                            case 37: // left
+                                snakeScene.moveSnakeDirection(-1, 0);
+                                break;
+                            case 38: // up
+                                snakeScene.moveSnakeDirection(0, -1);
+                                break;
+                            case 39: // right
+                                snakeScene.moveSnakeDirection(1, 0);
+                                break;
+                            case 40: // down
+                                snakeScene.moveSnakeDirection(0, 1);
+                                break;
+                        }
+                    });
+                    snakeScene.onDeath = function (snake) {
+                        console.log("snake has died");
+                    };
+                    snakeScene.onEatFood = function (snake) {
+                        console.log("snake eat a food");
+                    };
+                    document.querySelector("#reset").addEventListener("click", function (ev) {
+                        snakeScene.reset();
+                    }, true);
+                }
 
-                    snakeScene.update(ticks);
-                    snakeScene.draw();
+                // set up draw loop
+                {
+                    var i = 0;
+                    var lastDrawTick = 0;
+                    var showFPS = false;
+                    var drawLoop = function (ticks) {
 
-                    i++;
-                    if (showFPS && i % 60 == 0) {
-                        console.info("fps: " + (60000 / (ticks - lastDrawTick)).toString());
-                        lastDrawTick = ticks;
-                    }
+                        snakeScene.update(ticks);
+                        snakeScene.draw();
+
+                        i++;
+                        if (showFPS && i % 60 == 0) {
+                            console.info("fps: " + (60000 / (ticks - lastDrawTick)).toString());
+                            lastDrawTick = ticks;
+                        }
+                        window.requestAnimationFrame(drawLoop);
+                    };
                     window.requestAnimationFrame(drawLoop);
-                };
-                window.requestAnimationFrame(drawLoop);
-            }
-        })();
+                }
+            })();
+
     </script>
 
 </body>
