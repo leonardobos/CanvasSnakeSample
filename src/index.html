@@ -29,9 +29,10 @@
                     canvas.width = wf.width();
                     canvas.height = wf.height();
                     document.body.appendChild(canvas);
+                    var aspect = canvas.width / canvas.height;
                     snakeScene = new SnakeScene({
                         canvas: canvas,
-                        size: { w: 54, h: 36 }
+                        size: { w: Math.floor(20 * aspect), h: 20 }
                     });
                 }
 
@@ -45,10 +46,10 @@
                         var abs_y = Math.abs(y);
                         if (abs_x == 0 && abs_x == abs_y) return;
                         if (abs_x > abs_y) {
-                            snakeScene.moveSnakeDirection(x / Math.min(abs_x, 1), 0);
+                            snakeScene.moveSnakeDirection(x / Math.max(abs_x, 1), 0);
                         }
                         else {
-                            snakeScene.moveSnakeDirection(0, y / Math.min(abs_y, 1));
+                            snakeScene.moveSnakeDirection(0, y / Math.max(abs_y, 1));
                         }
                     }, true);
                     snakeScene.onScoreUpdate = function (snake) {
